@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       password,
       email_confirm: true,
       app_metadata: { role: 'technician' },
-      user_metadata: { name },
+      user_metadata: { name, trade },
     }),
   });
   const created = await createRes.json();

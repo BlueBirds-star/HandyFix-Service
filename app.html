@@ -99,7 +99,16 @@ input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;font:
     .then(function (u) {
       var role = u && u.app_metadata && u.app_metadata.role;
       if (role !== needRole) return deny();
+      if (role === 'technician') {
+        var myId = 'w' + u.id.replace(/-/g, '').slice(0, 12);
+        var meta = u.user_metadata || {};
+        if (!WORKERS.some(function (w) { return w.id === myId; })) {
+          WORKERS.push({ id: myId, name: meta.name || 'Technician', trade: meta.trade || 'Electrical' });
+        }
+        wk = myId;
+      }
       document.documentElement.setAttribute('data-gate', 'open');
+      if (typeof render === 'function') render();
     })
     .catch(deny);
 })();
