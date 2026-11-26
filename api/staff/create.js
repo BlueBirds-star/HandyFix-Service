@@ -14,6 +14,10 @@ export default async function handler(req, res) {
   if (!SB_URL || !SB_SERVICE) {
     return res.status(500).json({
       error: 'Server settings are missing. In Vercel, add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then redeploy.',
+      check: {
+        SUPABASE_URL: SB_URL ? 'set' : 'MISSING',
+        SUPABASE_SERVICE_ROLE_KEY: SB_SERVICE ? 'set' : 'MISSING',
+      },
     });
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
