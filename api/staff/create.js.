@@ -11,6 +11,11 @@ const SB_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SB_ANON = 'sb_publishable_C10VfCZFkbnRve05vRn1Vw_-YJ1CRi8';
 
 export default async function handler(req, res) {
+  if (!SB_URL || !SB_SERVICE) {
+    return res.status(500).json({
+      error: 'Server settings are missing. In Vercel, add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then redeploy.',
+    });
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // 1. The caller must be signed in as an admin.
