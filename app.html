@@ -81,8 +81,8 @@ input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;font:
 <script>
 (function () {
   var want = new URLSearchParams(location.search).get('start');
-  var needRole = want === 'admin' ? 'admin' : (want === 'technicians' ? 'technician' : null);
-  if (!needRole) return;
+  var allowedRoles = want === 'admin' ? ['admin'] : (want === 'technicians' ? ['technician', 'admin'] : null);
+  if (!allowedRoles) return;
   var SB_URL = 'https://npcezxyyhgbycdekioix.supabase.co';
   var SB_KEY = 'sb_publishable_C10VfCZFkbnRve05vRn1Vw_-YJ1CRi8';
   var LANDING = 'https://handifix-service.vercel.app/';
@@ -98,7 +98,7 @@ input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;font:
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (u) {
       var role = u && u.app_metadata && u.app_metadata.role;
-      if (role !== needRole) return deny();
+      if (allowedRoles.indexOf(role) === -1) return deny();
       if (role === 'technician') {
         var myId = 'w' + u.id.replace(/-/g, '').slice(0, 12);
         var meta = u.user_metadata || {};
