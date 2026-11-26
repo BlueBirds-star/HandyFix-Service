@@ -75,8 +75,35 @@ input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;font:
 @media(pointer:coarse){.b,.roles button,.sub button,.th{min-height:44px}}
 @media(orientation:landscape){:root{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}}
 </style>
+<style>html[data-gate="pending"] #app{visibility:hidden}</style>
 </head>
 <body>
+<script>
+(function () {
+  var want = new URLSearchParams(location.search).get('start');
+  var needRole = want === 'admin' ? 'admin' : (want === 'technicians' ? 'technician' : null);
+  if (!needRole) return;
+  var SB_URL = 'https://npcezxyyhgbycdekioix.supabase.co';
+  var SB_KEY = 'sb_publishable_C10VfCZFkbnRve05vRn1Vw_-YJ1CRi8';
+  var LANDING = 'https://handifix-service.vercel.app/';
+  document.documentElement.setAttribute('data-gate', 'pending');
+  function deny() { location.replace(LANDING); }
+  var token = '';
+  try {
+    var stored = JSON.parse(localStorage.getItem('sb-npcezxyyhgbycdekioix-auth-token') || 'null');
+    token = (stored && stored.access_token) || '';
+  } catch (e) {}
+  if (!token) return deny();
+  fetch(SB_URL + '/auth/v1/user', { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + token } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (u) {
+      var role = u && u.app_metadata && u.app_metadata.role;
+      if (role !== needRole) return deny();
+      document.documentElement.setAttribute('data-gate', 'open');
+    })
+    .catch(deny);
+})();
+</script>
 <div id="app"></div>
 <div id="toast"></div>
 <script>
