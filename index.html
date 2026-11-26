@@ -117,14 +117,14 @@ document.getElementById('lf').addEventListener('submit', async (e) => {
     password: document.getElementById('lp').value,
   });
   if (error) {
-    err.textContent = 'Email or password is incorrect.';
+    err.textContent = 'Sign-in failed: ' + (error.message || 'unknown error') + '.';
     btn.disabled = false;
     return;
   }
   const role = data.user && data.user.app_metadata && data.user.app_metadata.role;
   if (!ROUTES[role]) {
     await sbClient.auth.signOut();
-    err.textContent = 'This account does not have staff access.';
+    err.textContent = 'This account does not have staff access. Role found: ' + (role || 'none') + '.';
     btn.disabled = false;
     return;
   }
