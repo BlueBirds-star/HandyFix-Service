@@ -25,7 +25,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.botpress.cloud https://files.bpcontent.cloud; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://npcezxyyhgbycdekioix.supabase.co wss://npcezxyyhgbycdekioix.supabase.co https://api.paystack.co https://*.botpress.cloud https://*.bpcontent.cloud wss://*.botpress.cloud; frame-src https://*.botpress.cloud https://*.bpcontent.cloud; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.botpress.cloud https://files.bpcontent.cloud; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://npcezxyyhgbycdekioix.supabase.co wss://npcezxyyhgbycdekioix.supabase.co https://api.paystack.co https://*.botpress.cloud https://*.bpcontent.cloud wss://*.botpress.cloud; frame-src https://*.botpress.cloud https://*.bpcontent.cloud; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     }
