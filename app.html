@@ -108,6 +108,8 @@ input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;font:
         wk = myId;
       }
       document.documentElement.setAttribute('data-gate', 'open');
+      sbPull();
+      setInterval(sbPull, 15000);
       if (typeof render === 'function') render();
     })
     .catch(deny);
@@ -135,7 +137,18 @@ function seed(){const t=Date.now();return{seq:1042,last:null,jobs:[
 {id:1040,token:'HF-1040',name:'Chief Amadi',phone:'0805 555 0188',address:'5 Market Road',service:'Plumbing',urgency:'Standard',desc:'Bathroom tap leaking under the basin.',status:'quoted',quote:{items:[{d:'Replace basin mixer tap',q:1,p:18500},{d:'Labour',q:1,p:8000}]},worker:null,checks:[],events:[{t:new Date(t-72e5).toISOString(),m:'Request received'},{t:new Date(t-54e5).toISOString(),m:'Quote sent'}]}]}}
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return seed()}
 let DB=null,synced={},online='connecting';
-function save(){if(DB){S.jobs.forEach(j=>{const s=JSON.stringify(j);if(synced[j.id]===s)return;synced[j.id]=s;DB.doc('jobs/'+j.id).set(JSON.parse(s)).catch(()=>{delete synced[j.id];toast('Couldn’t save. You may only have view access.')})});return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// Shared job data in Supabase: admin and technicians read and write the same jobs.
+const SB_URL='https://npcezxyyhgbycdekioix.supabase.co';
+const SB_ANON='sb_publishable_C10VfCZFkbnRve05vRn1Vw_-YJ1CRi8';
+let lastPushed={};
+function sbSession(){try{return JSON.parse(localStorage.getItem('sb-npcezxyyhgbycdekioix-auth-token')||'null')}catch(e){return null}}
+function sbHeaders(extra){const s=sbSession();return Object.assign({apikey:SB_ANON,Authorization:'Bearer '+((s&&s.access_token)||SB_ANON),'Content-Type':'application/json'},extra||{})}
+function toDb(j){return{id:j.id,token:j.token,name:j.name,phone:j.phone,email:j.email||null,address:j.address,service:j.service,urgency:j.urgency,description:j.desc,status:j.status,quote:j.quote||null,worker_id:j.worker||null,checks:j.checks||[],events:j.events||[],pay_ref:j.payRef||null,paid_at:j.paidAt||null,completed_at:j.completedAt||null,signed_by:j.signedBy||null}}
+function fromDb(r){return{id:r.id,token:r.token,name:r.name,phone:r.phone,email:r.email,address:r.address,service:r.service,urgency:r.urgency,desc:r.description,status:r.status,quote:r.quote,worker:r.worker_id,checks:r.checks||[],events:r.events||[],payRef:r.pay_ref,paidAt:r.paid_at,completedAt:r.completed_at,signedBy:r.signed_by}}
+async function sbPull(){if(!sbSession())return;try{const r=await fetch(SB_URL+'/rest/v1/jobs?select=*&order=id.desc',{headers:sbHeaders()});if(!r.ok)return;const rows=await r.json();S.jobs=rows.map(fromDb);S.jobs.forEach(j=>{lastPushed[j.id]=JSON.stringify(toDb(j))});const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);if(!typing)render()}catch(e){}}
+function sbPushChanged(){if(!sbSession())return;S.jobs.forEach(j=>{const d=toDb(j),str=JSON.stringify(d);if(lastPushed[j.id]===str)return;lastPushed[j.id]=str;fetch(SB_URL+'/rest/v1/jobs?id=eq.'+j.id,{method:'PATCH',headers:sbHeaders({Prefer:'return=minimal'}),body:str}).then(r=>{if(!r.ok){delete lastPushed[j.id];toast('Could not save this job to shared data')}}).catch(()=>{delete lastPushed[j.id]})})}
+function sbInsert(j){const d=toDb(j),str=JSON.stringify(d);lastPushed[j.id]=str;fetch(SB_URL+'/rest/v1/jobs',{method:'POST',headers:sbHeaders({Prefer:'return=minimal'}),body:str}).then(r=>{if(!r.ok){delete lastPushed[j.id]}}).catch(()=>{delete lastPushed[j.id]})}
+function save(){sbPushChanged();if(DB){S.jobs.forEach(j=>{const s=JSON.stringify(j);if(synced[j.id]===s)return;synced[j.id]=s;DB.doc('jobs/'+j.id).set(JSON.parse(s)).catch(()=>{delete synced[j.id];toast('Couldn’t save. You may only have view access.')})});return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let S=load(),urg='Standard',role='customer',view='home',sel=null,wk='w1',draft=[],track='',payId=null;
 if(S.workers)WORKERS=S.workers;
 const J=id=>S.jobs.find(j=>j.id===id);
@@ -178,7 +191,7 @@ const SHEET_KEY='Edu-1507661';
 function sendToSheet(j){if(!SHEET_URL)return;fetch(SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:SHEET_KEY,code:j.token,name:j.name,phone:j.phone,email:j.email,address:j.address,service:j.service,urgency:j.urgency,problem:j.desc,status:j.status,received:new Date().toISOString()})}).catch(function(){})}
 function submitReq(){const v=i=>$('#r-'+i).value.trim();if(!v('name')||!v('phone')||!v('addr')||!v('desc'))return toast('Fill in your name, phone, address and the problem.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email')))return toast('Enter a valid email address.');
 const id=++S.seq,j={id,token:'HF-'+id,name:v('name'),phone:v('phone'),email:v('email'),address:v('addr'),service:v('svc'),urgency:v('urg'),desc:v('desc'),status:'requested',quote:null,worker:null,checks:[],events:[]};
-ev(j,'Request received'+(j.urgency==='Emergency'?' (emergency)':''));S.jobs.unshift(j);S.last=j.token;urg='Standard';save();sendToSheet(j);view='confirm';render()}
+ev(j,'Request received'+(j.urgency==='Emergency'?' (emergency)':''));S.jobs.unshift(j);S.last=j.token;urg='Standard';save();sendToSheet(j);sbInsert(j);view='confirm';render()}
 function vConfirm(){const j=byTok(S.last);if(!j){view='request';return vRequest()}return`<h1>Request received</h1><p class="mu">Keep this code. You’ll use it to see your quote, pay and follow the job.</p><div class="tk">${j.token}</div><div class="row"><button class="b" onclick="track='${j.token}';view='track';render()">Track this job</button><button class="b o" onclick="view='request';render()">Send another request</button></div>`}
 function vPay(){const j=track?byTok(track):null;let body='';if(track&&!j)body=`<div class="card err">No job found for “${esc(track)}”.</div>`;else if(j&&(j.status!=='quoted'||!j.quote))body=`<div class="card mu">Job ${j.token} has no quote waiting for payment.</div>`;else if(j)body=`<div class="card"><h2>${j.token}</h2>${qtable(j.quote)}<p><button class="b" onclick="startPay(${j.id})">Pay ${naira(sums(j.quote).t)} with Paystack</button></p></div>`;return`<h1>Pay online</h1><p class="mu">Enter your tracking code to pay your quote securely with Paystack.</p><div class="card row"><input id="p-in" placeholder="Tracking code, e.g. HF-1042" value="${esc(track)}"><button class="b" onclick="track=$('#p-in').value.trim().toUpperCase();render()">Find job</button></div>${body}`}
 function vTrack(){const j=byTok(track);return`<h1>Track a job</h1><div class="card row"><input id="t-in" placeholder="Tracking code, e.g. HF-1042" value="${esc(track)}"><button class="b" onclick="track=$('#t-in').value.trim().toUpperCase();render()">Track</button></div>`+(track?(j?jobCard(j):`<div class="card err">No job found for “${esc(track)}”. Check the code and try again.</div>`):'')}
