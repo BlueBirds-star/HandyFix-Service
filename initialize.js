@@ -23,6 +23,16 @@ export function quoteTotalNaira(quote) {
 }
 
 export default async function handler(req, res) {
+  if (!SB_URL || !SB_KEY || !PS_KEY) {
+    return res.status(500).json({
+      error: 'Payment settings are missing in Vercel. Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and PAYSTACK_SECRET_KEY, then redeploy.',
+      check: {
+        SUPABASE_URL: SB_URL ? 'set' : 'MISSING',
+        SUPABASE_SERVICE_ROLE_KEY: SB_KEY ? 'set' : 'MISSING',
+        PAYSTACK_SECRET_KEY: PS_KEY ? 'set' : 'MISSING',
+      },
+    });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
